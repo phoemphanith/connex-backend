@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api as Api;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,14 +20,13 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 //Public Route
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [Api\AuthController::class, 'register']);
+Route::post('/login', [Api\AuthController::class, 'login']);
 
-//Protected Route
-Route::group(['middleware' => ['auth:sanctum']], function () {
-    //Protected route here like example below
-    Route::get("/hello", function () {
-        return "Hello";
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::group(['prefix' => 'user'], function () {
+        Route::get('/profile', [Api\AuthController::class, 'show']);
+        Route::post('/update-profile', [Api\AuthController::class, 'update']);
+        Route::post('/change-password', [Api\AuthController::class, 'changePassword']);
     });
-    Route::post("/logout", [AuthController::class, 'logout']);
 });
