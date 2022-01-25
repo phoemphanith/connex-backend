@@ -14,6 +14,19 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+//Public Route
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+//Protected Route
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    //Protected route here like example below
+    Route::get("/hello", function () {
+        return "Hello";
+    });
+    Route::post("/logout", [AuthController::class, 'logout']);
 });
