@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api as Api;
+use App\Http\Controllers\Api as api;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,13 +20,13 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 //Public Route
-Route::post('/register', [Api\AuthController::class, 'register']);
-Route::post('/login', [Api\AuthController::class, 'login']);
+Route::post('/register', [api\AuthController::class, 'register']);
+Route::post('/login', [api\AuthController::class, 'login']);
 
 Route::group(['middleware' => 'auth:api'], function () {
     Route::group(['prefix' => 'user'], function () {
-        Route::get('/profile', [Api\AuthController::class, 'show']);
-        Route::post('/update-profile', [Api\AuthController::class, 'update']);
-        Route::post('/change-password', [Api\AuthController::class, 'changePassword']);
+        Route::get('/profile', [api\AuthController::class, 'show']);
+        Route::post('/update-profile', [api\AuthController::class, 'update']);
+        Route::post('/change-password', [api\AuthController::class, 'changePassword']);
     });
 });
