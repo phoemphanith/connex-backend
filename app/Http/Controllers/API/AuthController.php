@@ -1,68 +1,99 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use App\User;
+use App\Models\User;
+use App\Models\Upload;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(Request $request){
-        $fields = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|string|unique:users,email',
-            'password' => 'required|string|confirmed'
+    /**
+     * handle user registration request
+     */
+    public function register(Request $request)
+    {
+        $this->validate($request, [
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
         ]);
-
+        $image = Upload::saveFile('/user', $request->file('profile'), null);
         $user = User::create([
-            'name' => $fields['name'],
-            'email' => $fields['email'],
-            'password' => bcrypt($fields['password'])
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'profile' => $image
         ]);
 
-        $token = $user->createToken('myapptoken')->plainTextToken;
-
-        $response = [
+        $access_token_example = $user->createToken('PassportExample@Section.io')->accessToken;
+        //return the access token we generated in the above step
+        return response()->json([
             'user' => $user,
-            'token' => $token
-        ];
-
-        return response($response, 201);
+            'token' => $access_token_example
+        ], 200);
     }
-    
-    public function login(Request $request) {
-        $fields = $request->validate([
-            'email' => 'required|string',
-            'password' => 'required|string'
-        ]);
 
-        // Check email
-        $user = User::where('email', $fields['email'])->first();
-
-        // Check password
-        if(!$user || !Hash::check($fields['password'], $user->password)) {
-            return response([
-                'message' => 'Bad creds'
-            ], 401);
+    /**
+     * login user to our application
+     */
+    public function login(Request $request)
+    {
+        $login_credentials = [
+            'email' => $request->email,
+            'password' => $request->password,
+        ];
+        if (auth()->attempt($login_credentials)) {
+            $user = User::find(Auth::user()->id);
+            $user_login_token = $user->createToken('PassportExample@Section.io')->accessToken;
+            return response()->json([
+                'user' => $user,
+                'token' => $user_login_token
+            ], 200);
+        } else {
+            return response()->json(['error' => 'UnAuthorised Access'], 401);
         }
-
-        $token = $user->createToken('myapptoken')->plainTextToken;
-
-        $response = [
-            'user' => $user,
-            'token' => $token
-        ];
-
-        return response($response, 201);
     }
 
-    public function logout(Request $request) {
-        auth()->user()->tokens()->delete();
+    /**
+     * This method returns authenticated user details
+     */
+    public function show()
+    {
+        return response()->json(['user' => auth()->user()], 200);
+    }
 
-        return [
-            'message' => 'Logged out'
-        ];
+    public function update(Request $request)
+    {
+        $user = User::find(Auth::user()->id);
+        $image = Upload::saveFile('/user', $request->profile, $user->profile);
+        $user->update([
+            'name' => request('name', $user->name),
+            'profile' => $image
+        ]);
+        return response()->json(['user' => $user, 'message' => true, 'info' => 'Update Successfully.']);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $hashedPassword = Auth::user()->password;
+        if (Hash::check($request->old_password, $hashedPassword)) {
+            $user = User::find(Auth::user()->id);
+            $user->update([
+                'password' => bcrypt($request->password)
+            ]);
+            return response()->json([
+                'message' => true,
+                'info' => 'Password has been change.'
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => false,
+                'info' => 'Password can\'t change.'
+            ], 202);
+        }
     }
 }
