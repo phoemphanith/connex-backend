@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api as Api;
+use App\Http\Controllers\API as Api;
 
 /*
 |--------------------------------------------------------------------------
